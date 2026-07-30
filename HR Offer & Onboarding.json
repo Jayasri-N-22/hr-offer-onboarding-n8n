@@ -1,0 +1,597 @@
+{
+  "name": "HR Offer & Onboarding",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "New Hire Offer & Onboarding",
+        "formDescription": "HR: enter the candidate details to generate and send the offer.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Candidate Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Candidate Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Role Title",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Department",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Manager Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Manager Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Start Date",
+              "fieldType": "date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Salary",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e9906e24-dd7a-45b2-9d16-0fedcb9e22af",
+      "name": "Offer Intake Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        192
+      ],
+      "webhookId": "a6bb6873-e568-4f41-9bbb-090eee42446e"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "candidate_name",
+              "type": "string",
+              "value": "={{ $json[\"Candidate Name\"] }}"
+            },
+            {
+              "id": "a2",
+              "name": "candidate_email",
+              "type": "string",
+              "value": "={{ $json[\"Candidate Email\"] }}"
+            },
+            {
+              "id": "a3",
+              "name": "role_title",
+              "type": "string",
+              "value": "={{ $json[\"Role Title\"] }}"
+            },
+            {
+              "id": "a4",
+              "name": "department",
+              "type": "string",
+              "value": "={{ $json[\"Department\"] }}"
+            },
+            {
+              "id": "a5",
+              "name": "manager_name",
+              "type": "string",
+              "value": "={{ $json[\"Manager Name\"] }}"
+            },
+            {
+              "id": "a6",
+              "name": "manager_email",
+              "type": "string",
+              "value": "={{ $json[\"Manager Email\"] }}"
+            },
+            {
+              "id": "a7",
+              "name": "start_date",
+              "type": "string",
+              "value": "={{ $json[\"Start Date\"] }}"
+            },
+            {
+              "id": "a8",
+              "name": "salary",
+              "type": "string",
+              "value": "={{ $json[\"Salary\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "09e85e3f-9c1c-4988-834c-748d59d9141e",
+      "name": "Prepare Candidate Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "folderId": "<__PLACEHOLDER_VALUE__Google Drive folder ID for offer letters__>",
+        "title": "=Offer Letter - {{ $json.candidate_name }} ({{ $json.role_title }})"
+      },
+      "id": "e8a5558d-0e09-4d4f-9f2d-0681f6efd421",
+      "name": "Create Offer Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        448,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "=Dear {{ $('Prepare Candidate Data').item.json.candidate_name }},\n\nWe are delighted to offer you the position of {{ $('Prepare Candidate Data').item.json.role_title }} in the {{ $('Prepare Candidate Data').item.json.department }} department.\n\nStart date: {{ $('Prepare Candidate Data').item.json.start_date }}\nCompensation: {{ $('Prepare Candidate Data').item.json.salary }}\nReporting manager: {{ $('Prepare Candidate Data').item.json.manager_name }}\n\nTo accept this offer, please sign below.\n\nSignature: /sig/\n\nWarm regards,\nHuman Resources"
+            }
+          ]
+        }
+      },
+      "id": "bbfda50c-5dcb-4ce3-a29f-d95746c868ae",
+      "name": "Fill Offer Letter",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        672,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Select HR/onboarding channel"
+        },
+        "text": "=:page_facing_up: Offer letter generated for *{{ $('Prepare Candidate Data').item.json.candidate_name }}* ({{ $('Prepare Candidate Data').item.json.role_title }}). Sending for e-signature now.",
+        "otherOptions": {}
+      },
+      "id": "a5dfc9e9-7907-47d0-85e8-dab469b3ab0d",
+      "name": "Notify HR - Offer Generated",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        896,
+        0
+      ],
+      "webhookId": "bd9b8553-ed41-433f-b88c-32f3f3cb5d65"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Prepare Candidate Data').item.json.candidate_email }}",
+        "subject": "=Your offer letter - {{ $('Prepare Candidate Data').item.json.role_title }}",
+        "message": "=<p>Dear {{ $('Prepare Candidate Data').item.json.candidate_name }},</p><p>Congratulations! We are excited to offer you the role of <strong>{{ $('Prepare Candidate Data').item.json.role_title }}</strong>.</p><p>You can review your offer letter here: <a href=\"https://docs.google.com/document/d/{{ $('Create Offer Doc').item.json.id }}/edit\">Offer Letter</a></p><p>A separate email will arrive shortly asking you to sign the offer electronically.</p><p>Warm regards,<br/>Human Resources</p>",
+        "options": {}
+      },
+      "id": "6073d81f-6824-4a58-94f2-3eee82d9c9a0",
+      "name": "Email Offer to Candidate",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        192
+      ],
+      "webhookId": "45f44267-79c9-447d-8e00-e510c6ad0c60"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $('Create Offer Doc').item.json.id }}/export?mimeType=application/pdf",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "eee8b13f-a64d-4a09-9877-ad39f571af0d",
+      "name": "Export Offer as PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "destinationKey": "docBase64",
+        "options": {}
+      },
+      "id": "64d83f13-c9a1-45fd-ab60-823ebec5796e",
+      "name": "Encode PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "<__PLACEHOLDER_VALUE__DocuSign envelopes URL, e.g. https://demo.docusign.net/restapi/v2.1/accounts/{accountId}/envelopes__>",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"emailSubject\": \"Please sign your offer letter - {{ $('Prepare Candidate Data').item.json.role_title }}\",\n  \"documents\": [\n    { \"documentBase64\": \"{{ $json.docBase64 }}\", \"name\": \"Offer Letter\", \"fileExtension\": \"pdf\", \"documentId\": \"1\" }\n  ],\n  \"recipients\": {\n    \"signers\": [\n      {\n        \"email\": \"{{ $('Prepare Candidate Data').item.json.candidate_email }}\",\n        \"name\": \"{{ $('Prepare Candidate Data').item.json.candidate_name }}\",\n        \"recipientId\": \"1\",\n        \"routingOrder\": \"1\",\n        \"tabs\": { \"signHereTabs\": [ { \"anchorString\": \"/sig/\", \"anchorUnits\": \"pixels\", \"anchorXOffset\": \"0\", \"anchorYOffset\": \"0\" } ] }\n      }\n    ]\n  },\n  \"eventNotification\": {\n    \"url\": \"{{ $execution.resumeUrl }}\",\n    \"requireAcknowledgment\": \"true\",\n    \"loggingEnabled\": \"true\",\n    \"envelopeEvents\": [\n      { \"envelopeEventStatusCode\": \"completed\" },\n      { \"envelopeEventStatusCode\": \"declined\" },\n      { \"envelopeEventStatusCode\": \"voided\" }\n    ]\n  },\n  \"status\": \"sent\"\n}",
+        "options": {}
+      },
+      "id": "8e491655-6c66-47ca-9db2-2c4dbcaf159b",
+      "name": "Send for E-Signature",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "id": "da1f9f2e-df15-4e67-bd40-2e097b4b38c9",
+      "name": "Wait for Signature",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1568,
+        384
+      ],
+      "webhookId": "686f4b1f-bca1-4548-99b4-d3dafada877f"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.body.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0e1362f1-372d-4e90-8e95-d4fb0403d710",
+      "name": "Signed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1792,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Prepare Candidate Data').item.json.candidate_email }}",
+        "subject": "=Welcome to the team, {{ $('Prepare Candidate Data').item.json.candidate_name }}!",
+        "message": "=<p>Hi {{ $('Prepare Candidate Data').item.json.candidate_name }},</p><p>Your signed offer is received — welcome aboard as <strong>{{ $('Prepare Candidate Data').item.json.role_title }}</strong> in {{ $('Prepare Candidate Data').item.json.department }}!</p><p>Your start date is <strong>{{ $('Prepare Candidate Data').item.json.start_date }}</strong>. Your manager {{ $('Prepare Candidate Data').item.json.manager_name }} will be in touch with first-day details.</p><p>Onboarding documents and next steps are attached to your onboarding checklist.</p><p>We are thrilled to have you!<br/>Human Resources</p>",
+        "options": {}
+      },
+      "id": "072466a9-e418-4292-af7d-677602ea2b78",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        288
+      ],
+      "webhookId": "67943120-3644-4546-81f6-013b8a8a233d"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Select onboarding tasks database"
+        },
+        "title": "=Onboarding - {{ $('Prepare Candidate Data').item.json.candidate_name }} ({{ $('Prepare Candidate Data').item.json.role_title }})",
+        "blockUi": {
+          "blockValues": [
+            {
+              "type": "to_do",
+              "textContent": "Send equipment / laptop request to IT"
+            },
+            {
+              "type": "to_do",
+              "textContent": "Provision system accounts (email, Slack, tools)"
+            },
+            {
+              "type": "to_do",
+              "textContent": "Add to payroll & benefits"
+            },
+            {
+              "type": "to_do",
+              "textContent": "Schedule first-day orientation"
+            },
+            {
+              "type": "to_do",
+              "textContent": "Assign onboarding buddy"
+            },
+            {
+              "type": "to_do",
+              "textContent": "Share team handbook & onboarding docs"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1340d14-ea6c-428c-9539-45355475e4ed",
+      "name": "Create Onboarding Checklist",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Select HR/onboarding channel"
+        },
+        "text": "=:tada: *{{ $('Prepare Candidate Data').item.json.candidate_name }}* signed their offer for *{{ $('Prepare Candidate Data').item.json.role_title }}*! Start date: {{ $('Prepare Candidate Data').item.json.start_date }}. Onboarding checklist created and welcome email sent.",
+        "otherOptions": {}
+      },
+      "id": "6866aa62-2ae9-462f-a9f8-654d20cd9603",
+      "name": "Notify Team - Signed",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        2464,
+        288
+      ],
+      "webhookId": "e6d167d5-e28f-4747-ad74-fb777f92b3f0"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Prepare Candidate Data').item.json.manager_email }}",
+        "subject": "=New hire confirmed: {{ $('Prepare Candidate Data').item.json.candidate_name }}",
+        "message": "=<p>Hi {{ $('Prepare Candidate Data').item.json.manager_name }},</p><p>{{ $('Prepare Candidate Data').item.json.candidate_name }} has signed the offer for <strong>{{ $('Prepare Candidate Data').item.json.role_title }}</strong> and will start on <strong>{{ $('Prepare Candidate Data').item.json.start_date }}</strong>.</p><p>An onboarding checklist has been created. Please review and prepare for their first day.</p><p>HR</p>",
+        "options": {}
+      },
+      "id": "15ad50d3-a738-4b4b-920b-af9a93f6beec",
+      "name": "Notify Manager",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2688,
+        288
+      ],
+      "webhookId": "9ccb6de7-75a4-4ae1-9ffb-8e2e3b593c5e"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Select HR/onboarding channel"
+        },
+        "text": "=:warning: Offer for *{{ $('Prepare Candidate Data').item.json.candidate_name }}* ({{ $('Prepare Candidate Data').item.json.role_title }}) was not completed — DocuSign status: {{ $json.body.status }}. Please follow up.",
+        "otherOptions": {}
+      },
+      "id": "ae39fb2f-6377-49ee-8a2d-ab2dc9f39b84",
+      "name": "Notify HR - Not Signed",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        2016,
+        480
+      ],
+      "webhookId": "ac68c9c3-90ef-46f0-a5d2-7c64ed22b590"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Offer Intake Form": {
+      "main": [
+        [
+          {
+            "node": "Prepare Candidate Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Candidate Data": {
+      "main": [
+        [
+          {
+            "node": "Create Offer Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Offer Doc": {
+      "main": [
+        [
+          {
+            "node": "Fill Offer Letter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fill Offer Letter": {
+      "main": [
+        [
+          {
+            "node": "Notify HR - Offer Generated",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email Offer to Candidate",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Export Offer as PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Export Offer as PDF": {
+      "main": [
+        [
+          {
+            "node": "Encode PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encode PDF": {
+      "main": [
+        [
+          {
+            "node": "Send for E-Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send for E-Signature": {
+      "main": [
+        [
+          {
+            "node": "Wait for Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Signature": {
+      "main": [
+        [
+          {
+            "node": "Signed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Signed?": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify HR - Not Signed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Create Onboarding Checklist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Onboarding Checklist": {
+      "main": [
+        [
+          {
+            "node": "Notify Team - Signed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Team - Signed": {
+      "main": [
+        [
+          {
+            "node": "Notify Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "70bbe8ef-c53f-4e00-948d-7fbd4c77bdc7",
+  "meta": {
+    "instanceId": "07ea5f84258cbe33a6ced36abf9f08afc4144be83c58a545e87593c46b7f4522"
+  },
+  "nodeGroups": [],
+  "id": "DoIkzbCJMK2gWRgW",
+  "tags": []
+}
